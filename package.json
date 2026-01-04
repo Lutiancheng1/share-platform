@@ -1,0 +1,26 @@
+{
+  "name": "share-platform",
+  "version": "1.0.0",
+  "private": true,
+  "description": "跨设备实时内容共享平台",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspaces --if-present",
+    "build": "npm run build --workspaces --if-present",
+    "start": "npm run start --workspaces --if-present"
+  },
+  "keywords": [
+    "websocket",
+    "realtime",
+    "share",
+    "nextjs",
+    "nestjs"
+  ],
+  "author": "",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}
