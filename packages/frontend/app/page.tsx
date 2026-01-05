@@ -12,11 +12,13 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { socketService } from '@/lib/socket'
 import { Message, MessageDto } from '@/lib/types'
-import { Users, ArrowUp, ArrowDown, Upload } from 'lucide-react'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
+import { Users, ArrowUp, ArrowDown, Upload, MoreVertical, Trash2, X } from 'lucide-react'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
 import { cn, getApiUrl } from '@/lib/utils'
 import { PhotoProvider } from 'react-photo-view'
 import 'react-photo-view/dist/react-photo-view.css'
+import { toast } from 'sonner'
 
 export default function Home() {
   const router = useRouter()
@@ -36,8 +38,9 @@ export default function Home() {
   const [isSelectMode, setIsSelectMode] = useState(false)
   const [selectedMessageIds, setSelectedMessageIds] = useState<Set<string>>(new Set())
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
-  const [kicked, setKicked] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
+  const [inviteOpen, setInviteOpen] = useState(false)
+  const [settingsOpen, setSettingsOpen] = useState(false)
 
   const scrollRef = useRef<HTMLDivElement>(null)
   const messageInputRef = useRef<MessageInputRef>(null)
@@ -88,18 +91,20 @@ export default function Home() {
           })
 
           if (!response.ok) {
-            throw new Error('邀请链接无效或已过期')
+            const errorData = await response.json().catch(() => ({}))
+            throw new Error(errorData.message || '邀请链接无效或已过期')
           }
 
           const data = await response.json()
           localStorage.setItem('auth_token', data.token)
           localStorage.setItem('user_type', data.type)
+          setUserType(data.type)
 
           // 清除URL中的invite参数
           router.replace('/')
         } catch (err) {
           const error = err as Error
-          alert(error.message || '访客登录失败')
+          toast.error(error.message || '访客登录失败')
           router.push('/login')
         }
       }
@@ -178,8 +183,18 @@ export default function Home() {
 
     // 监听被踢出事件
     const handleKicked = () => {
-      setKicked(true)
       socketService.disconnect()
+      toast.error('您已被管理员移出当前会话，5秒后自动返回登录页', {
+        duration: 5000
+      })
+
+      // 5秒后自动跳转
+      setTimeout(() => {
+        // 清除本地凭证
+        localStorage.removeItem('auth_token')
+        localStorage.removeItem('user_type')
+        router.push('/login')
+      }, 5000)
     }
     socket.on('kicked', handleKicked)
 
@@ -196,7 +211,7 @@ export default function Home() {
       socket.off('kicked', handleKicked)
       socketService.disconnect()
     }
-  }, [])
+  }, [userType])
 
   useEffect(() => {
     const handleScroll = () => {
@@ -398,40 +413,48 @@ export default function Home() {
             </Badge>
 
             {/* 在线用户 - 管理员可点击查看详情 */}
-            {userType === 'admin' ? (
-              <Badge variant="outline" className="gap-1 text-xs cursor-pointer hover:bg-secondary" onClick={() => setShowOnlineUsers(true)} title="点击查看在线用户详情">
-                <Users className="h-3 w-3" />
-                {onlineCount}
-              </Badge>
-            ) : (
-              <Badge variant="outline" className="gap-1 text-xs">
-                <Users className="h-3 w-3" />
-                {onlineCount}
-              </Badge>
-            )}
+            {!isSelectMode &&
+              (userType === 'admin' ? (
+                <Badge variant="outline" className="gap-1 text-xs cursor-pointer hover:bg-secondary" onClick={() => setShowOnlineUsers(true)} title="点击查看在线用户详情">
+                  <Users className="h-3 w-3" />
+                  {onlineCount}
+                </Badge>
+              ) : (
+                <Badge variant="outline" className="gap-1 text-xs">
+                  <Users className="h-3 w-3" />
+                  {onlineCount}
+                </Badge>
+              ))}
 
-            {/* 管理员专属功能 */}
-            {userType === 'admin' && (
+            {/* 更多菜单 - 所有用户可见，但选项不同 */}
+            {isSelectMode && userType === 'admin' ? (
               <>
-                {isSelectMode ? (
-                  <>
-                    <Button variant="destructive" size="sm" className="h-7 text-xs" onClick={handleDeleteClick} disabled={selectedMessageIds.size === 0}>
-                      删除 ({selectedMessageIds.size})
-                    </Button>
-                    <Button variant="outline" size="sm" className="h-7 text-xs" onClick={toggleSelectMode}>
-                      取消
-                    </Button>
-                  </>
-                ) : (
-                  <Button variant="outline" size="sm" className="h-7 text-xs" onClick={toggleSelectMode}>
-                    选择
-                  </Button>
-                )}
-                <InviteLinkGenerator />
+                <Button variant="destructive" size="icon" className="h-8 w-8" onClick={handleDeleteClick} disabled={selectedMessageIds.size === 0}>
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={toggleSelectMode}>
+                  <X className="h-4 w-4" />
+                </Button>
               </>
+            ) : (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-8 w-8">
+                    <MoreVertical className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  {userType === 'admin' && <DropdownMenuItem onClick={() => setInviteOpen(true)}>生成邀请链接</DropdownMenuItem>}
+                  <DropdownMenuItem onClick={() => setSettingsOpen(true)}>设置</DropdownMenuItem>
+                  {userType === 'admin' && <DropdownMenuItem onClick={toggleSelectMode}>选择消息</DropdownMenuItem>}
+                </DropdownMenuContent>
+              </DropdownMenu>
             )}
 
-            <SettingsDialog columns={columns} onColumnsChange={setColumns} />
+            {/* 邀请链接生成器 - 仅管理员 */}
+            {userType === 'admin' && <InviteLinkGenerator open={inviteOpen} onOpenChange={setInviteOpen} showTrigger={false} />}
+
+            <SettingsDialog columns={columns} onColumnsChange={setColumns} open={settingsOpen} onOpenChange={setSettingsOpen} showTrigger={false} />
           </div>
         </header>
 
@@ -517,19 +540,6 @@ export default function Home() {
               <AlertDialogAction onClick={handleConfirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
                 确认删除
               </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-
-        {/* 被踢出通知弹窗 */}
-        <AlertDialog open={kicked}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>您已被移出</AlertDialogTitle>
-              <AlertDialogDescription>管理员已将您从当前会话中移除。</AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogAction onClick={() => window.location.reload()}>重新连接</AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>

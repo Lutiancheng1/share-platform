@@ -1,10 +1,11 @@
 import { useState } from 'react'
+import { toast } from 'sonner'
 import { Card, CardContent } from './ui/card'
 import { Button } from './ui/button'
 import { Badge } from './ui/badge'
 import { Message } from '@/lib/types'
 import { Copy, ExternalLink, FileText } from 'lucide-react'
-import { getApiUrl } from '@/lib/utils'
+import { getApiUrl, copyToClipboard } from '@/lib/utils'
 import { PhotoView } from 'react-photo-view'
 
 interface MessageCardProps {
@@ -15,15 +16,12 @@ interface MessageCardProps {
 }
 
 export function MessageCard({ message, selectable, selected, onSelect }: MessageCardProps) {
-  const [copied, setCopied] = useState(false)
-
-  const copyToClipboard = async (text: string) => {
-    try {
-      await navigator.clipboard.writeText(text)
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
-    } catch (err) {
-      console.error('复制失败:', err)
+  const handleCopy = async (text: string) => {
+    const success = await copyToClipboard(text)
+    if (success) {
+      toast.success('复制成功')
+    } else {
+      toast.error('复制失败')
     }
   }
 
@@ -32,18 +30,29 @@ export function MessageCard({ message, selectable, selected, onSelect }: Message
       case 'text':
         return (
           <div className="space-y-1.5">
-            <p className="text-xs leading-relaxed">{message.content}</p>
+            <p className="text-xs leading-relaxed whitespace-pre-wrap break-all">
+              {message.content?.split(/(https?:\/\/[^\s]+)/g).map((part, index) => {
+                if (part.match(/^https?:\/\//)) {
+                  return (
+                    <a key={index} href={part} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline break-all" onClick={(e) => e.stopPropagation()}>
+                      {part}
+                    </a>
+                  )
+                }
+                return part
+              })}
+            </p>
             <Button
               size="sm"
               variant="outline"
-              className="h-7 text-xs"
+              className="h-6 w-6 p-0"
+              title="复制"
               onClick={(e) => {
                 e.stopPropagation()
-                copyToClipboard(message.content || '')
+                handleCopy(message.content || '')
               }}
             >
-              <Copy className="h-3 w-3 mr-1" />
-              {copied ? '已复制' : '复制'}
+              <Copy className="h-3 w-3" />
             </Button>
           </div>
         )
@@ -58,14 +67,14 @@ export function MessageCard({ message, selectable, selected, onSelect }: Message
             <Button
               size="sm"
               variant="outline"
-              className="h-7 text-xs"
+              className="h-6 w-6 p-0"
+              title="复制"
               onClick={(e) => {
                 e.stopPropagation()
-                copyToClipboard(message.content || '')
+                handleCopy(message.content || '')
               }}
             >
-              <Copy className="h-3 w-3 mr-1" />
-              {copied ? '已复制' : '复制'}
+              <Copy className="h-3 w-3" />
             </Button>
           </div>
         )

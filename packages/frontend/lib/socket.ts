@@ -52,16 +52,6 @@ class SocketService {
       this.socket.on('reconnect_failed', () => {
         console.error('❌ WebSocket重连失败（已尝试5次）')
       })
-
-      // 监听被踢出事件
-      this.socket.on('kicked', (data: { message: string }) => {
-        console.warn('👢 被管理员踢出:', data.message)
-        alert(data.message)
-        // 清除登录信息并跳转到登录页
-        localStorage.removeItem('auth_token')
-        localStorage.removeItem('user_type')
-        window.location.href = '/login'
-      })
     }
 
     return this.socket

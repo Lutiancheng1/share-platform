@@ -9,20 +9,25 @@ import { RadioGroup, RadioGroupItem } from './ui/radio-group'
 interface SettingsDialogProps {
   columns: number
   onColumnsChange: (columns: number) => void
+  open?: boolean
+  onOpenChange?: (open: boolean) => void
+  showTrigger?: boolean
 }
 
-export function SettingsDialog({ columns, onColumnsChange }: SettingsDialogProps) {
+export function SettingsDialog({ columns, onColumnsChange, open, onOpenChange, showTrigger = true }: SettingsDialogProps) {
   return (
-    <Dialog>
-      <DialogTrigger asChild>
-        <Button variant="outline" size="sm" className="h-6 w-6 p-0">
-          <Settings className="h-3 w-3" />
-        </Button>
-      </DialogTrigger>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      {showTrigger && (
+        <DialogTrigger asChild>
+          <Button variant="outline" size="sm" className="h-6 w-6 p-0">
+            <Settings className="h-3 w-3" />
+          </Button>
+        </DialogTrigger>
+      )}
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>设置</DialogTitle>
-          <DialogDescription>自定义您的消息显示偏好</DialogDescription>
+          <DialogDescription>调整消息显示布局</DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
           <div className="space-y-2">

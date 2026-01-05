@@ -44,10 +44,16 @@ export class AuthService {
    * 访客登录 - 验证邀请链接并生成guest token
    */
   guestLogin(inviteToken: string, ip: string): string {
-    const isValid = this.inviteService.verifyInvite(inviteToken);
+    const status = this.inviteService.verifyInvite(inviteToken);
 
-    if (!isValid) {
-      throw new UnauthorizedException('邀请链接无效或已过期');
+    if (status !== 'VALID') {
+      let message = '邀请链接无效';
+      if (status === 'USED') {
+        message = '此邀请链接已被使用，请联系管理员获取新链接';
+      } else if (status === 'EXPIRED') {
+        message = '邀请链接已过期';
+      }
+      throw new UnauthorizedException(message);
     }
 
     // 生成唯一guest ID

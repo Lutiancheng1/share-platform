@@ -1,11 +1,12 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from './ui/dialog'
 import { Button } from './ui/button'
 import { Badge } from './ui/badge'
 import { Users, X } from 'lucide-react'
 import { Socket } from 'socket.io-client'
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'
 
 interface OnlineUser {
   socketId: string
@@ -47,9 +48,7 @@ export function OnlineUsersModal({ socket, show, onClose }: OnlineUsersModalProp
   }, [socket])
 
   const handleKickUser = (socketId: string) => {
-    if (confirm('确定要踢出该用户吗？')) {
-      socket?.emit('kickUser', socketId)
-    }
+    socket?.emit('kickUser', socketId)
   }
 
   const formatDuration = (dateString: string) => {
@@ -72,6 +71,7 @@ export function OnlineUsersModal({ socket, show, onClose }: OnlineUsersModalProp
             <Users className="h-5 w-5" />
             在线用户 ({users.length})
           </DialogTitle>
+          <DialogDescription>当前连接到服务器的所有用户列表</DialogDescription>
         </DialogHeader>
 
         <div className="flex-1 overflow-y-auto space-y-2 pr-2">
@@ -90,10 +90,26 @@ export function OnlineUsersModal({ socket, show, onClose }: OnlineUsersModalProp
                   </div>
 
                   {user.userType !== 'admin' && (
-                    <Button size="sm" variant="destructive" className="h-7 text-xs" onClick={() => handleKickUser(user.socketId)}>
-                      <X className="h-3 w-3 mr-1" />
-                      踢出
-                    </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button size="sm" variant="destructive" className="h-7 text-xs">
+                          <X className="h-3 w-3 mr-1" />
+                          踢出
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>确认踢出该用户？</AlertDialogTitle>
+                          <AlertDialogDescription>该用户将被强制下线并清除登录状态，此操作无法撤销。</AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>取消</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => handleKickUser(user.socketId)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                            确认踢出
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   )}
                 </div>
 

@@ -6,6 +6,8 @@ import { InviteToken } from '../../interfaces/user.interface';
 export class InviteService {
   // 内存存储邀请令牌（生产环境应该用Redis）
   private invites: Map<string, InviteToken> = new Map();
+  // 记录已使用的令牌，用于提示用户（保留24小时）
+  private usedInvites: Map<string, Date> = new Map();
 
   /**
    * 生成邀请令牌
@@ -42,20 +44,45 @@ export class InviteService {
   /**
    * 验证邀请令牌
    */
-  verifyInvite(token: string): boolean {
+  verifyInvite(token: string): 'VALID' | 'EXPIRED' | 'NOT_FOUND' | 'USED' {
+    // 先检查是否在已使用列表中
+    if (this.usedInvites.has(token)) {
+      return 'USED';
+    }
+
     const invite = this.invites.get(token);
-    if (!invite) return false;
+    if (!invite) return 'NOT_FOUND';
 
     // 检查是否过期
     if (invite.expiresAt && invite.expiresAt < new Date()) {
       this.invites.delete(token);
-      return false;
+      return 'EXPIRED';
     }
 
     // 增加使用次数
     invite.usedCount++;
 
-    return true;
+    // 验证成功后立即删除，确保一次性使用，并加入已使用列表
+    this.invites.delete(token);
+    this.usedInvites.set(token, new Date());
+
+    // 清理过期的已使用记录（简单的清理策略）
+    this.cleanupUsedInvites();
+
+    return 'VALID';
+  }
+
+  private cleanupUsedInvites() {
+    const now = new Date();
+    // 简单的概率清理，避免每次都遍历
+    if (Math.random() < 0.1) {
+      for (const [token, date] of this.usedInvites.entries()) {
+        // 保留24小时
+        if (now.getTime() - date.getTime() > 24 * 60 * 60 * 1000) {
+          this.usedInvites.delete(token);
+        }
+      }
+    }
   }
 
   /**

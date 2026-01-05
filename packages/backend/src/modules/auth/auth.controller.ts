@@ -42,10 +42,10 @@ export class AuthController {
   @Get('verify-invite')
   verifyInvite(@Query('token') token: string) {
     try {
-      const isValid = this.authService['inviteService'].verifyInvite(token);
-      return { valid: isValid };
+      const status = this.authService['inviteService'].verifyInvite(token);
+      return { valid: status === 'VALID', status };
     } catch {
-      return { valid: false };
+      return { valid: false, status: 'ERROR' };
     }
   }
 

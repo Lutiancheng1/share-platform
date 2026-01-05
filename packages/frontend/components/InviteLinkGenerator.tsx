@@ -1,16 +1,23 @@
 'use client'
 
 import { copyToClipboard } from '@/lib/utils'
+import { toast } from 'sonner'
 
 import { useState } from 'react'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog'
 import { Button } from './ui/button'
 import { Input } from './ui/input'
 import { Label } from './ui/label'
 import { RadioGroup, RadioGroupItem } from './ui/radio-group'
 import { Copy, Link as LinkIcon, Check } from 'lucide-react'
 
-export function InviteLinkGenerator() {
+interface InviteLinkGeneratorProps {
+  open?: boolean
+  onOpenChange?: (open: boolean) => void
+  showTrigger?: boolean
+}
+
+export function InviteLinkGenerator({ open, onOpenChange, showTrigger = true }: InviteLinkGeneratorProps) {
   const [inviteUrl, setInviteUrl] = useState('')
   const [expiresIn, setExpiresIn] = useState<string>('7')
   const [loading, setLoading] = useState(false)
@@ -40,8 +47,9 @@ export function InviteLinkGenerator() {
 
       const data = await response.json()
       setInviteUrl(data.url)
+      toast.success('邀请链接已生成')
     } catch {
-      alert('生成邀请链接失败，请重试')
+      toast.error('生成邀请链接失败，请重试')
     } finally {
       setLoading(false)
     }
@@ -51,22 +59,36 @@ export function InviteLinkGenerator() {
     const success = await copyToClipboard(inviteUrl)
     if (success) {
       setCopied(true)
+      toast.success('链接已复制')
       setTimeout(() => setCopied(false), 2000)
     } else {
-      alert('复制失败，请长按链接手动复制')
+      toast.error('复制失败，请长按链接手动复制')
     }
   }
 
+  const handleOpenChange = (newOpen: boolean) => {
+    if (!newOpen) {
+      // 关闭时重置状态
+      setInviteUrl('')
+      setExpiresIn('7')
+      setCopied(false)
+    }
+    onOpenChange?.(newOpen)
+  }
+
   return (
-    <Dialog>
-      <DialogTrigger asChild>
-        <Button variant="outline" size="sm" className="h-6 w-6 p-0" title="生成邀请链接">
-          <LinkIcon className="h-3 w-3" />
-        </Button>
-      </DialogTrigger>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      {showTrigger && (
+        <DialogTrigger asChild>
+          <Button variant="outline" size="sm" className="h-6 w-6 p-0" title="生成邀请链接">
+            <LinkIcon className="h-3 w-3" />
+          </Button>
+        </DialogTrigger>
+      )}
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>生成邀请链接</DialogTitle>
+          <DialogDescription>创建一个临时的邀请链接分享给他人</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-4">

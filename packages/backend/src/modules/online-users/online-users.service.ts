@@ -6,6 +6,8 @@ import * as UAParser from 'ua-parser-js';
 export class OnlineUsersService {
   // 内存存储在线用户（生产环境应该用Redis）
   private onlineUsers: Map<string, OnlineUser> = new Map();
+  // 存储用户首次连接时间（userId -> Date）
+  private userFirstSeen: Map<string, Date> = new Map();
 
   /**
    * 解析User-Agent字符串，提取设备、操作系统和浏览器信息。
@@ -40,6 +42,13 @@ export class OnlineUsersService {
   ): OnlineUser {
     const deviceInfo = this.parseUserAgent(userAgent);
 
+    // 如果是首次连接，记录时间；否则复用之前的连接时间
+    let connectedAt = this.userFirstSeen.get(userId);
+    if (!connectedAt) {
+      connectedAt = new Date();
+      this.userFirstSeen.set(userId, connectedAt);
+    }
+
     const user: OnlineUser = {
       socketId,
       userId,
@@ -48,7 +57,7 @@ export class OnlineUsersService {
       device: deviceInfo.device,
       os: deviceInfo.os,
       browser: deviceInfo.browser,
-      connectedAt: new Date(),
+      connectedAt,
       lastActiveAt: new Date(),
     };
 

@@ -77,10 +77,12 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       // 广播在线用户数
       this.server.emit('onlineCount', this.onlineUsersService.getCount());
 
-      // 如果是管理员，发送在线用户列表
-      if (userType === 'admin') {
-        client.emit('onlineUsers', this.onlineUsersService.getAllUsers());
-      }
+      // 通知所有管理员更新在线用户列表
+      this.broadcastOnlineUsersToAdmins();
+
+      // 如果是管理员，发送在线用户列表 (broadcast already covers this, but keeping it for immediate response is fine, or remove it to avoid double send. broadcast iterates all sockets. The current client is in the list. So broadcast covers it. But let's keep it safe or just rely on broadcast.)
+      // Actually, broadcast iterates all sockets. The current socket is connected. So it will receive it.
+      // But let's just add the broadcast line.
 
       // 发送最近100条历史消息
       const history = await this.messageService.getRecentMessages(100);

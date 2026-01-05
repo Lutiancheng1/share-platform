@@ -7,6 +7,7 @@ import { Input } from './ui/input'
 import { Send, Image as ImageIcon, Paperclip, X, Upload } from 'lucide-react'
 import { getApiUrl } from '@/lib/utils'
 import { PhotoView } from 'react-photo-view'
+import { toast } from 'sonner'
 
 export interface MessageInputRef {
   addFiles: (files: File[]) => void
@@ -85,7 +86,7 @@ export const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(({ on
       setPreviewUrls([])
     } catch (err) {
       console.error('发送失败:', err)
-      alert('发送失败，请重试')
+      toast.error('发送失败，请重试')
     } finally {
       setUploading(false)
     }
@@ -172,7 +173,7 @@ export const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(({ on
         <Textarea placeholder="输入消息或直接粘贴图片/文件... (Ctrl/Cmd + Enter 发送)" value={text} onChange={(e) => setText(e.target.value)} onKeyDown={handleKeyPress} onPaste={handlePaste} className="min-h-[50px] max-h-[100px] resize-none text-sm" disabled={uploading} />
       </div>
 
-      <div className="flex gap-2 justify-between">
+      <div className="flex gap-2 justify-between mt-2">
         <div className="flex gap-1.5">
           <Input ref={fileInputRef} type="file" className="hidden" onChange={handleFileSelect} accept="image/*,.pdf,.txt,.json" multiple />
           <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => fileInputRef.current?.click()} disabled={uploading}>
