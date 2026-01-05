@@ -66,7 +66,7 @@ export const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(({ on
         const formData = new FormData()
         formData.append('file', file)
 
-        const response = await fetch(`${getApiUrl()}/api/upload`, {
+        const response = await fetch(`${getApiUrl()}/api/upload/file`, {
           method: 'POST',
           body: formData
         })

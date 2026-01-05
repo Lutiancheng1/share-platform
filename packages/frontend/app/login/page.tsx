@@ -8,7 +8,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Lock } from 'lucide-react'
 import { getApiUrl } from '@/lib/utils'
 
-export default function LoginPage() {
+import { Suspense } from 'react'
+
+function LoginForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [password, setPassword] = useState('')
@@ -99,34 +101,42 @@ export default function LoginPage() {
   }
 
   return (
+    <Card className="w-full max-w-md pt-4">
+      <CardHeader className="text-center">
+        <CardTitle className="text-2xl font-bold">跨设备共享平台</CardTitle>
+        <CardDescription>管理员登录</CardDescription>
+      </CardHeader>
+      <CardContent className="px-6 pb-6">
+        <form onSubmit={handleAdminLogin} className="space-y-4">
+          <div className="space-y-2">
+            <div className="relative">
+              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input type="password" placeholder="管理员密码" value={password} onChange={(e) => setPassword(e.target.value)} className="pl-10" disabled={loading} required autoFocus />
+            </div>
+          </div>
+
+          {error && <p className="text-sm text-red-500 text-center">{error}</p>}
+
+          <Button type="submit" className="w-full" disabled={loading}>
+            {loading ? '登录中...' : '登录'}
+          </Button>
+
+          <div className="text-center text-sm text-muted-foreground space-y-1">
+            <p>需要邀请链接才能访问</p>
+            <p className="text-xs">请联系管理员获取访问权限</p>
+          </div>
+        </form>
+      </CardContent>
+    </Card>
+  )
+}
+
+export default function LoginPage() {
+  return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-secondary p-4">
-      <Card className="w-full max-w-md pt-4">
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold">跨设备共享平台</CardTitle>
-          <CardDescription>管理员登录</CardDescription>
-        </CardHeader>
-        <CardContent className="px-6 pb-6">
-          <form onSubmit={handleAdminLogin} className="space-y-4">
-            <div className="space-y-2">
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input type="password" placeholder="管理员密码" value={password} onChange={(e) => setPassword(e.target.value)} className="pl-10" disabled={loading} required autoFocus />
-              </div>
-            </div>
-
-            {error && <p className="text-sm text-red-500 text-center">{error}</p>}
-
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? '登录中...' : '登录'}
-            </Button>
-
-            <div className="text-center text-sm text-muted-foreground space-y-1">
-              <p>需要邀请链接才能访问</p>
-              <p className="text-xs">请联系管理员获取访问权限</p>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
+      <Suspense fallback={<div>Loading...</div>}>
+        <LoginForm />
+      </Suspense>
     </div>
   )
 }

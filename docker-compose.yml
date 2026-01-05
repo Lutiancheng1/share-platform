@@ -7,7 +7,7 @@ services:
     container_name: share-platform-db
     restart: unless-stopped
     ports:
-      - "5432:5432"
+      - "5433:5432"
     environment:
       POSTGRES_DB: share_platform
       POSTGRES_USER: admin
@@ -26,7 +26,7 @@ services:
     container_name: share-platform-redis
     restart: unless-stopped
     ports:
-      - "6379:6379"
+      - "6380:6379"
     volumes:
       - redis-data:/data
     healthcheck:
@@ -42,13 +42,12 @@ services:
       dockerfile: Dockerfile
     container_name: share-platform-backend
     restart: unless-stopped
-    ports:
-      - "3001:3001"
+    network_mode: "host"
     environment:
       NODE_ENV: production
-      DATABASE_URL: postgresql://admin:${POSTGRES_PASSWORD:-changeme123}@postgres:5432/share_platform
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
+      DATABASE_URL: postgresql://admin:${POSTGRES_PASSWORD:-changeme123}@localhost:5433/share_platform
+      REDIS_HOST: localhost
+      REDIS_PORT: 6380
       ACCESS_PASSWORD: ${ACCESS_PASSWORD}
       JWT_SECRET: ${JWT_SECRET}
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
@@ -68,8 +67,7 @@ services:
       dockerfile: Dockerfile
     container_name: share-platform-frontend
     restart: unless-stopped
-    ports:
-      - "3000:3000"
+    network_mode: "host"
     environment:
       NODE_ENV: production
       NEXT_PUBLIC_WS_URL: ${NEXT_PUBLIC_WS_URL:-http://localhost:3001}

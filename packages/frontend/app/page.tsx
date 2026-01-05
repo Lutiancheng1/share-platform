@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState, useRef, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { MessageCard } from '@/components/MessageCard'
 import { MessageInput, MessageInputRef } from '@/components/MessageInput'
@@ -20,7 +20,7 @@ import { PhotoProvider } from 'react-photo-view'
 import 'react-photo-view/dist/react-photo-view.css'
 import { toast } from 'sonner'
 
-export default function Home() {
+function HomeContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [messages, setMessages] = useState<Message[]>([])
@@ -545,5 +545,13 @@ export default function Home() {
         </AlertDialog>
       </div>
     </PhotoProvider>
+  )
+}
+
+export default function Home() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <HomeContent />
+    </Suspense>
   )
 }

@@ -29,11 +29,13 @@
 
 ## 🚀 快速开始
 
-### 1. 环境要求
+### 方式一：本地开发
+
+#### 1. 环境要求
 - Node.js >= 18
 - npm or yarn or pnpm
 
-### 2. 安装依赖
+#### 2. 安装依赖
 
 在项目根目录下运行：
 
@@ -53,7 +55,7 @@ cd ../backend
 npm install
 ```
 
-### 3. 启动项目
+#### 3. 启动项目
 
 我们提供了一个便捷的启动脚本，可以同时启动前端和后端服务：
 
@@ -66,7 +68,89 @@ npm install
 - **前端地址**: `http://localhost:3000` (或局域网 IP:3000)
 - **后端地址**: `http://localhost:3001` (或局域网 IP:3001)
 
-### 4. 常用命令
+---
+
+### 方式二：Docker 部署（推荐生产环境）
+
+#### 1. 环境要求
+- Docker
+- Docker Compose
+
+#### 2. 配置环境变量
+
+复制并编辑环境变量文件：
+
+```bash
+cp .env.example .env
+```
+
+主要配置项：
+```env
+# 数据库
+POSTGRES_PASSWORD=your_password
+
+# JWT 密钥
+JWT_SECRET=your_secret_key
+
+# 管理员密码
+ACCESS_PASSWORD=admin123
+```
+
+#### 3. 构建和启动
+
+在项目根目录执行：
+
+```bash
+# 构建镜像
+docker compose build
+
+# 启动所有服务
+docker compose up -d
+```
+
+#### 4. 访问应用
+
+启动成功后，通过以下地址访问：
+- **前端**: `http://localhost:3000` 或 `http://服务器IP:3000`
+- **后端 API**: `http://localhost:3001` 或 `http://服务器IP:3001`
+
+#### 5. 防火墙配置
+
+**服务器防火墙（ufw）:**
+```bash
+ufw allow 3000/tcp  # 前端
+ufw allow 3001/tcp  # 后端
+ufw reload
+```
+
+**云服务商安全组（如果部署在云服务器）:**
+- 入站规则添加：3000/TCP、3001/TCP
+- 授权对象：0.0.0.0/0（或特定 IP 段）
+
+#### 6. Docker 管理命令
+
+```bash
+# 查看容器状态
+docker compose ps
+
+# 查看日志
+docker compose logs frontend
+docker compose logs backend
+
+# 重启服务
+docker compose restart
+
+# 停止服务
+docker compose down
+
+# 完全重新构建
+docker compose build --no-cache
+docker compose up -d
+```
+
+---
+
+### 常用开发命令
 
 #### 前端
 ```bash
@@ -92,19 +176,58 @@ share-platform/
 │   ├── frontend/          # Next.js 前端项目
 │   │   ├── app/           # 页面路由
 │   │   ├── components/    # React 组件
-│   │   └── lib/           # 工具函数和类型定义
+│   │   ├── lib/           # 工具函数和类型定义
+│   │   └── Dockerfile     # 前端容器配置
 │   └── backend/           # NestJS 后端项目
 │       ├── src/
 │       │   ├── modules/   # 业务模块 (upload, invite, etc.)
 │       │   └── ...
-└── start.sh               # 一键启动脚本
+│       └── Dockerfile     # 后端容器配置
+├── docker-compose.yml     # Docker 编排配置
+├── start.sh               # 本地开发启动脚本
+└── .env.example           # 环境变量示例
 ```
+
+## 🏗 架构说明
+
+### Docker 架构
+```
+┌─────────────────────────────────────────┐
+│             服务器（Host Network）       │
+├─────────────────────────────────────────┤
+│  Frontend (3000)  ←→  Backend (3001)    │
+│                         ↓                │
+│          PostgreSQL (5433) + Redis (6380)│
+└─────────────────────────────────────────┘
+```
+
+**网络模式**: 使用 `network_mode: host`，容器直接使用宿主机网络
+
+**端口映射**:
+- 前端: 3000
+- 后端: 3001
+- PostgreSQL: 5433 (外部) → 5432 (容器内)
+- Redis: 6380 (外部) → 6379 (容器内)
+
+### API 路由
+- `POST /api/auth/admin/login` - 管理员登录
+- `POST /api/auth/guest/login` - 访客登录
+- `POST /api/upload/file` - 文件上传
+- `GET /api/messages` - 获取消息列表
+- WebSocket: `/socket.io/` - 实时通信
 
 ## 📝 注意事项
 
-- 确保 3000 和 3001 端口未被占用。
-- 局域网访问时，请确保防火墙允许通过这两个端口。
-- 上传文件大小限制默认为 50MB (可在后端配置中修改)。
+### 本地开发
+- 确保 3000 和 3001 端口未被占用
+- 局域网访问时，请确保防火墙允许通过这两个端口
+
+### 生产部署
+- **务必修改** `.env` 中的密码和密钥
+- 确保云服务商安全组已开放 3000 和 3001 端口
+- 上传文件大小限制默认为 50MB（可在后端配置中修改）
+- 建议配置 HTTPS（可通过 Nginx 反向代理实现）
+- 定期备份数据库数据
 
 ## 🤝 贡献
 
