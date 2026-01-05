@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from './ui/dialog'
 import { Button } from './ui/button'
 import { Badge } from './ui/badge'
-import { Users, X } from 'lucide-react'
+import { Users, X, Crown, User } from 'lucide-react'
 import { Socket } from 'socket.io-client'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'
 
@@ -82,7 +82,7 @@ export function OnlineUsersModal({ socket, show, onClose }: OnlineUsersModalProp
               <div key={user.socketId} className="border rounded-lg p-3 space-y-2 hover:bg-secondary/50 transition-colors">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <span className="text-lg">{user.userType === 'admin' ? '👑' : '👤'}</span>
+                    <span className="text-lg">{user.userType === 'admin' ? <Crown className="h-5 w-5 text-yellow-500" /> : <User className="h-5 w-5 text-muted-foreground" />}</span>
                     <div>
                       <p className="text-sm font-medium">{user.userType === 'admin' ? '管理员' : `访客 #${user.userId.slice(-6)}`}</p>
                       <p className="text-xs text-muted-foreground">在线 {formatDuration(user.connectedAt)}</p>

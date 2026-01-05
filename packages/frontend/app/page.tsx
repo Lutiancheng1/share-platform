@@ -446,7 +446,7 @@ export default function Home() {
                 <DropdownMenuContent align="end">
                   {userType === 'admin' && <DropdownMenuItem onClick={() => setInviteOpen(true)}>生成邀请链接</DropdownMenuItem>}
                   <DropdownMenuItem onClick={() => setSettingsOpen(true)}>设置</DropdownMenuItem>
-                  {userType === 'admin' && <DropdownMenuItem onClick={toggleSelectMode}>选择消息</DropdownMenuItem>}
+                  {userType === 'admin' && <DropdownMenuItem onClick={toggleSelectMode}>编辑消息</DropdownMenuItem>}
                 </DropdownMenuContent>
               </DropdownMenu>
             )}
