@@ -13,7 +13,7 @@ import { Badge } from '@/components/ui/badge'
 import { socketService } from '@/lib/socket'
 import { Message, MessageDto } from '@/lib/types'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
-import { Users, ArrowUp, ArrowDown, Upload, MoreVertical, Trash2, X } from 'lucide-react'
+import { Users, ArrowUp, ArrowDown, Upload, MoreVertical, Trash2, X, Search } from 'lucide-react'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
 import { cn, getApiUrl } from '@/lib/utils'
 import { PhotoProvider } from 'react-photo-view'
@@ -425,6 +425,13 @@ function HomeContent() {
                   {onlineCount}
                 </Badge>
               ))}
+
+            {/* 搜索按钮 */}
+            {!isSelectMode && (
+              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setSearchVisible(true)} title="搜索消息 (Ctrl/Cmd+F)">
+                <Search className="h-4 w-4" />
+              </Button>
+            )}
 
             {/* 更多菜单 - 所有用户可见，但选项不同 */}
             {isSelectMode && userType === 'admin' ? (
