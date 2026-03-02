@@ -55,6 +55,9 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
           userType = decoded.type || 'guest';
         } catch (e) {
           console.warn(`⚠️  Invalid token from ${ip}`, e);
+          client.emit('authExpired', { message: '登录已过期，请重新登录' });
+          client.disconnect(true);
+          return;
         }
       }
 

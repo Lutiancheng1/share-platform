@@ -51,7 +51,7 @@ services:
       ACCESS_PASSWORD: ${ACCESS_PASSWORD}
       JWT_SECRET: ${JWT_SECRET}
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
-      MAX_FILE_SIZE: ${MAX_FILE_SIZE:-10485760}
+      MAX_FILE_SIZE: ${MAX_FILE_SIZE:-52428800}
     depends_on:
       postgres:
         condition: service_healthy

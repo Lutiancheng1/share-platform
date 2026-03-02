@@ -20,6 +20,31 @@ import { PhotoProvider } from 'react-photo-view'
 import 'react-photo-view/dist/react-photo-view.css'
 import { toast } from 'sonner'
 
+type AppUserType = 'admin' | 'guest'
+
+interface JwtTokenPayload {
+  type?: AppUserType
+  exp?: number
+}
+
+function parseJwtPayload(token: string): JwtTokenPayload | null {
+  try {
+    const [, payloadPart] = token.split('.')
+    if (!payloadPart) return null
+    const base64 = payloadPart.replace(/-/g, '+').replace(/_/g, '/')
+    const normalized = base64.padEnd(Math.ceil(base64.length / 4) * 4, '=')
+    const payloadString = atob(normalized)
+    return JSON.parse(payloadString) as JwtTokenPayload
+  } catch {
+    return null
+  }
+}
+
+function isTokenExpired(payload: JwtTokenPayload): boolean {
+  if (!payload.exp) return false
+  return payload.exp * 1000 <= Date.now()
+}
+
 function HomeContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -74,6 +99,17 @@ function HomeContent() {
     }
   }
 
+  const clearAuthAndRedirect = (message?: string) => {
+    socketService.disconnect()
+    localStorage.removeItem('auth_token')
+    localStorage.removeItem('user_type')
+    setUserType(null)
+    if (message) {
+      toast.error(message)
+    }
+    router.push('/login')
+  }
+
   // 登录检查和路由处理
   useEffect(() => {
     const inviteToken = searchParams.get('invite')
@@ -119,7 +155,20 @@ function HomeContent() {
       return
     }
 
-    setUserType(storedUserType as 'admin' | 'guest')
+    const tokenPayload = parseJwtPayload(token)
+    if (!tokenPayload || isTokenExpired(tokenPayload)) {
+      clearAuthAndRedirect('登录已过期，请重新登录')
+      return
+    }
+
+    const resolvedUserType = tokenPayload.type || storedUserType
+    if (!resolvedUserType) {
+      clearAuthAndRedirect('登录状态异常，请重新登录')
+      return
+    }
+
+    localStorage.setItem('user_type', resolvedUserType)
+    setUserType(resolvedUserType as AppUserType)
   }, [searchParams, router])
 
   useEffect(() => {
@@ -132,9 +181,25 @@ function HomeContent() {
     })
 
     // 只有在已登录时才连接WebSocket（直接读localStorage，不依赖state）
-    if (!token || !storedUserType) {
+    if (!token) {
       console.warn('⚠️ 未登录，跳过Socket连接', { hasToken: !!token, hasUserType: !!storedUserType })
       return
+    }
+
+    const tokenPayload = parseJwtPayload(token)
+    if (!tokenPayload || isTokenExpired(tokenPayload)) {
+      clearAuthAndRedirect('登录已过期，请重新登录')
+      return
+    }
+
+    const resolvedUserType = (tokenPayload.type || storedUserType) as AppUserType | null
+    if (!resolvedUserType) {
+      clearAuthAndRedirect('登录状态异常，请重新登录')
+      return
+    }
+
+    if (storedUserType !== resolvedUserType) {
+      localStorage.setItem('user_type', resolvedUserType)
     }
 
     console.log('🎫 准备连接Socket...')
@@ -169,6 +234,13 @@ function HomeContent() {
       setOnlineCount(count)
     })
 
+    const handleSocketError = (payload?: { message?: string }) => {
+      if (payload?.message) {
+        toast.error(payload.message)
+      }
+    }
+    socket.on('error', handleSocketError)
+
     // 监听消息删除事件
     const handleMessagesDeleted = (deletedIds: string[]) => {
       setMessages((prev) => prev.filter((msg) => !deletedIds.includes(msg.id)))
@@ -198,6 +270,11 @@ function HomeContent() {
     }
     socket.on('kicked', handleKicked)
 
+    const handleAuthExpired = (payload?: { message?: string }) => {
+      clearAuthAndRedirect(payload?.message || '登录已过期，请重新登录')
+    }
+    socket.on('authExpired', handleAuthExpired)
+
     // 设置超时，如果5秒后还没收到历史消息，也结束loading
     const timeout = setTimeout(() => {
       if (!historyLoaded) {
@@ -207,8 +284,10 @@ function HomeContent() {
 
     return () => {
       clearTimeout(timeout)
+      socket.off('error', handleSocketError)
       socket.off('messagesDeleted', handleMessagesDeleted)
       socket.off('kicked', handleKicked)
+      socket.off('authExpired', handleAuthExpired)
       socketService.disconnect()
     }
   }, [userType])

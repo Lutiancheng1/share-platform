@@ -22,6 +22,7 @@ export const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(({ on
   const [uploading, setUploading] = useState(false)
   const [selectedFiles, setSelectedFiles] = useState<File[]>([])
   const [previewUrls, setPreviewUrls] = useState<string[]>([])
+  const [fileAccept, setFileAccept] = useState('*/*')
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   useImperativeHandle(ref, () => ({
@@ -71,7 +72,16 @@ export const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(({ on
           body: formData
         })
 
-        if (!response.ok) throw new Error('上传失败')
+        if (!response.ok) {
+          let errorMessage = '上传失败'
+          try {
+            const errorData = await response.json()
+            errorMessage = errorData.message || errorData.error || errorMessage
+          } catch {
+            // ignore json parse errors
+          }
+          throw new Error(errorMessage)
+        }
 
         const data = await response.json()
         const type = file.type.startsWith('image/') ? 'image' : 'file'
@@ -86,7 +96,8 @@ export const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(({ on
       setPreviewUrls([])
     } catch (err) {
       console.error('发送失败:', err)
-      toast.error('发送失败，请重试')
+      const errorMessage = err instanceof Error ? err.message : '发送失败，请重试'
+      toast.error(errorMessage)
     } finally {
       setUploading(false)
     }
@@ -175,12 +186,30 @@ export const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(({ on
 
       <div className="flex gap-2 justify-between mt-2">
         <div className="flex gap-1.5">
-          <Input ref={fileInputRef} type="file" className="hidden" onChange={handleFileSelect} accept="image/*,.pdf,.txt,.json" multiple />
-          <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => fileInputRef.current?.click()} disabled={uploading}>
+          <Input ref={fileInputRef} type="file" className="hidden" onChange={handleFileSelect} accept={fileAccept} multiple />
+          <Button
+            size="sm"
+            variant="outline"
+            className="h-7 text-xs"
+            onClick={() => {
+              setFileAccept('image/*')
+              fileInputRef.current?.click()
+            }}
+            disabled={uploading}
+          >
             <ImageIcon className="h-3 w-3 mr-1" />
             图片
           </Button>
-          <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => fileInputRef.current?.click()} disabled={uploading}>
+          <Button
+            size="sm"
+            variant="outline"
+            className="h-7 text-xs"
+            onClick={() => {
+              setFileAccept('*/*')
+              fileInputRef.current?.click()
+            }}
+            disabled={uploading}
+          >
             <Paperclip className="h-3 w-3 mr-1" />
             文件
           </Button>

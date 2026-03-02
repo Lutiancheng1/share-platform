@@ -9,38 +9,34 @@ import { UploadController } from './upload.controller';
   imports: [
     MulterModule.registerAsync({
       imports: [ConfigModule],
-      useFactory: (configService: ConfigService) => ({
-        storage: diskStorage({
-          destination: './uploads',
-          filename: (req, file, callback) => {
-            const uniqueSuffix =
-              Date.now() + '-' + Math.round(Math.random() * 1e9);
-            const ext = extname(file.originalname);
-            callback(null, `${file.fieldname}-${uniqueSuffix}${ext}`);
-          },
-        }),
-        limits: {
-          fileSize: configService.get('MAX_FILE_SIZE') || 10 * 1024 * 1024, // 默认10MB
-        },
-        fileFilter: (req, file, callback) => {
-          // 允许的文件类型
-          const allowedMimes = [
-            'image/jpeg',
-            'image/png',
-            'image/gif',
-            'image/webp',
-            'application/pdf',
-            'text/plain',
-            'application/json',
-          ];
+      useFactory: (configService: ConfigService) => {
+        const defaultMaxFileSize = 50 * 1024 * 1024; // 默认50MB
+        const maxFileSize = Number(
+          configService.get('MAX_FILE_SIZE') ?? defaultMaxFileSize,
+        );
 
-          if (allowedMimes.includes(file.mimetype)) {
+        return {
+          storage: diskStorage({
+            destination: './uploads',
+            filename: (req, file, callback) => {
+              const uniqueSuffix =
+                Date.now() + '-' + Math.round(Math.random() * 1e9);
+              const ext = extname(file.originalname);
+              callback(null, `${file.fieldname}-${uniqueSuffix}${ext}`);
+            },
+          }),
+          limits: {
+            fileSize:
+              Number.isFinite(maxFileSize) && maxFileSize > 0
+                ? maxFileSize
+                : defaultMaxFileSize,
+          },
+          // 放开文件类型限制，所有文件统一按附件处理（预览能力由前端决定）
+          fileFilter: (req, file, callback) => {
             callback(null, true);
-          } else {
-            callback(new Error('不支持的文件类型'), false);
-          }
-        },
-      }),
+          },
+        };
+      },
       inject: [ConfigService],
     }),
   ],
