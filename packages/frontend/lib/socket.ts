@@ -1,11 +1,13 @@
 import { io, Socket } from 'socket.io-client'
 
+const DEFAULT_WS_PORT = process.env.NEXT_PUBLIC_WS_PORT || '3001'
+
 const getWsUrl = () => {
   if (process.env.NEXT_PUBLIC_WS_URL) return process.env.NEXT_PUBLIC_WS_URL
   if (typeof window !== 'undefined') {
-    return `http://${window.location.hostname}:3001`
+    return `${window.location.protocol}//${window.location.hostname}:${DEFAULT_WS_PORT}`
   }
-  return 'http://localhost:3001'
+  return `http://localhost:${DEFAULT_WS_PORT}`
 }
 
 const WS_URL = getWsUrl()

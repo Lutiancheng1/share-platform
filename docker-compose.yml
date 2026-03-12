@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # PostgreSQL 数据库
   postgres:
@@ -37,6 +35,7 @@ services:
 
   # NestJS 后端
   backend:
+    image: share-platform-backend:deploy
     build:
       context: ./packages/backend
       dockerfile: Dockerfile
@@ -45,6 +44,7 @@ services:
     network_mode: "host"
     environment:
       NODE_ENV: production
+      PORT: ${BACKEND_PORT:-3011}
       DATABASE_URL: postgresql://admin:${POSTGRES_PASSWORD:-changeme123}@localhost:5433/share_platform
       REDIS_HOST: localhost
       REDIS_PORT: 6380
@@ -62,15 +62,22 @@ services:
 
   # Next.js 前端
   frontend:
+    image: share-platform-frontend:deploy
     build:
       context: ./packages/frontend
       dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_PORT: ${NEXT_PUBLIC_API_PORT:-3011}
+        NEXT_PUBLIC_WS_PORT: ${NEXT_PUBLIC_WS_PORT:-3011}
     container_name: share-platform-frontend
     restart: unless-stopped
     network_mode: "host"
     environment:
       NODE_ENV: production
-      NEXT_PUBLIC_WS_URL: ${NEXT_PUBLIC_WS_URL:-http://localhost:3001}
+      PORT: ${FRONTEND_PORT:-3010}
+      NEXT_PUBLIC_API_PORT: ${NEXT_PUBLIC_API_PORT:-3011}
+      NEXT_PUBLIC_WS_PORT: ${NEXT_PUBLIC_WS_PORT:-3011}
+      NEXT_PUBLIC_WS_URL: ${NEXT_PUBLIC_WS_URL:-http://localhost:3011}
     depends_on:
       - backend
 

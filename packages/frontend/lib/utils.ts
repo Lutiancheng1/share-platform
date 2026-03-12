@@ -7,6 +7,8 @@ export function cn(...inputs: ClassValue[]) {
 
 import copy from 'copy-to-clipboard'
 
+const DEFAULT_API_PORT = process.env.NEXT_PUBLIC_API_PORT || '3001'
+
 export async function copyToClipboard(text: string): Promise<boolean> {
   // 1. Try modern API first (if secure context)
   try {
@@ -32,7 +34,7 @@ export async function copyToClipboard(text: string): Promise<boolean> {
 
 export function getApiUrl() {
   if (typeof window !== 'undefined') {
-    return `http://${window.location.hostname}:3001`
+    return `${window.location.protocol}//${window.location.hostname}:${DEFAULT_API_PORT}`
   }
-  return 'http://localhost:3001'
+  return `http://localhost:${DEFAULT_API_PORT}`
 }
